@@ -1,0 +1,51 @@
+---
+title: "Guarding Health and Wealth"
+subtitle: "Examining The Interplay Between GDP, Insecticide Treated Mosquito Nets and Life Expectancy"
+author: "Robert Timmons"
+date: "03/04/2024"
+format: html
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+#libraries
+library(readr)
+library(tidyverse)
+library(maps)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+#data
+unicef_indicator_2 <- read_csv("unicef_indicator_2.csv")
+unicef_metadata <- read_csv("unicef_metadata.csv")
+
+#transformations
+data_join <- full_join(unicef_indicator_2, unicef_metadata)
+data_join <- full_join(unicef_indicator_2, unicef_metadata, by = "country")
+
+```
+```{r}
+map_world <- map_data("world")
+
+map_data_join <- full_join(unicef_indicator_2, map_world, by = c("country" = "region"))
+
+ggplot(map_data_join) +
+  aes(x = long, y = lat, group = group, fill = obs_value) +
+  geom_polygon() +
+  scale_fill_gradient(low = "red" , high = "darkblue", name = "% of ITMN") +  
+  labs(fill = "obs_value") + 
+  labs(x = "latitude", y = "longitude", title = "% Of households using atleast one or more Insecticide Treated Mosquito Nets") +
+  theme_void()
+
+
+```
+
+
+
+
+
+
+

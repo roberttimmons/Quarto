@@ -1,0 +1,170 @@
+---
+title: "Netting A Healthier Future"
+subtitle: "Examining The Interplay Between The Use Of Insecticide Treated Mosquito Nets And Human Health"
+author: "Robert Timmons"
+date: "03/04/2024"
+format: 
+  html:
+   theme: lumen
+   backgroundcolor: lightblue
+   toc: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+#libraries
+library(readr)
+library(tidyverse)
+library(maps)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+#data
+unicef_indicator_2 <- read_csv("unicef_indicator_2.csv")
+unicef_metadata <- read_csv("unicef_metadata.csv")
+
+#transformations
+data_join <- full_join(unicef_indicator_2, unicef_metadata)
+data_join <- full_join(unicef_indicator_2, unicef_metadata, by = "country")
+
+```
+
+## Introduction
+
+<img src="itmn.jpg" alt="ITMN Image" style="display: block; margin: 0 auto;" />
+
+
+*This report endeavors to assess and delve into the correlation between the utilization of* ***insecticide-treated mosquito nets (ITMNs)*** *and their implications for* ***human health***. The increasing trend in ITMN usage holds the potential for creating a safer environment in terms of **malaria prevention**. However, upon scrutinizing the uptake of ITMNs and juxtaposing it with the **life expectancy at birth** in the countries from which our data was collected, contrasting outcomes emerge.
+
+## A World View
+
+```{r}
+#| fig-cap: "Malaria poses a relentless threat to **human health** worldwide. In the ongoing battle against this deadly disease, affected countries must fortify their defenses. *One crucial defense mechanism is the utilization of preventative measures, notably* ***insecticide-treated mosquito nets (ITMNs)***. The visualization below illuminates the countries from which data was collected regarding the percentage of households equipped with at least one or more **insecticide-treated mosquito net**. It becomes apparent from this visualization that the countries most severely impacted by malaria demonstrate a significant uptake in the use of **ITMNs**."
+#|
+map_world <- map_data("world")
+
+map_data_join <- full_join(unicef_indicator_2, map_world, by = c("country" = "region"), relationship = "many-to-many")
+
+ggplot(map_data_join) +
+  aes(x = long, y = lat, group = group, fill = obs_value) +
+  geom_polygon() +
+  scale_fill_gradient(low = "red" , high = "lightblue", name = "% of ITMN") +  
+  labs(fill = "obs_value") + 
+  labs(x = "latitude",
+       y = "longitude", 
+       title = "% Of households with atleast one or more Insecticide Treated Mosquito Nets") +
+  theme_void() +
+  theme(text = element_text(family = "serif", size = 12))
+
+```
+
+## The Rise of ITMN Adoption
+
+```{r}
+#| fig-cap: "In **Guinea-Bissau, Tanzania, Mali, Niger and Uganda there has been a dramatic increase in the adoption of insecticide treated mosquito nets between 2005 and 2021**. This upward trajectory of adoption is due to the efforts of goverments, charitable organisations (i.e. unicef) and local communities. *It is evident from the timeseries visualisation above that with each passing year the adoption of* ***ITMNs*** *is increasing*. This inspires hope that these regions efforts may further reduce the threat of **malaria** as we progress into the future."
+#|
+selected_countries <- c("Guinea-Bissau", "Niger", "Mali","Tanzania, United Republic of","Uganda")
+filtered_data <- data_join %>%
+  filter(country %in% selected_countries)
+
+time_series_plot_filtered <- filtered_data %>%
+  ggplot()+
+  aes(time_period, obs_value, group = country, color = country) +
+  geom_line() +
+  labs(x= "years", 
+       y = "% of households with at least one ITMN", 
+       title = "The growth in adoption of ITMNS between 2005 and 2021") +
+  theme_classic() +
+  theme(text = element_text(family = "serif", size = 12))
+
+
+ggplotly(time_series_plot_filtered)
+
+```
+
+<img src="unicef.jpg" alt="UNICEF Logo" width="300" height="200" style="display: block; margin: 0 auto;" />
+
+## A Paradox: ITMN Adoption And The Unexpected Dip In Life Expectancy
+
+```{r}
+#| fig-cap: "As we take a look at a **comparison** of **life expectancy** at birth and the usage of ITMNs in 2015 it could be assumed life expectancy at birth and the use of ITMNs have a negative correlation. However, this is not the case. **ITMNs prevent mosquitos spreading malaria therefore would increase life expectancy**. As a result, this would deem the above comparison misleading and untrue."
+
+filtered_data <- data_join %>%
+  filter(year == 2015 & !is.na(obs_value) & !is.na(`Life expectancy at birth, total (years)`))
+
+scatter_plot <- ggplot(filtered_data) +
+  aes(x = obs_value, y = `Life expectancy at birth, total (years)`, color = country) +
+  geom_point(alpha = 2, show.legend = FALSE) +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = "black", linewidth = 0.5) +
+  scale_x_continuous(
+    limits = c(0, 100),
+    breaks = c(25, 50, 75, 100), 
+    labels = scales::unit_format(unit = "%", scale = 1)
+  ) +
+  scale_size_continuous(guide = FALSE) +
+  labs(x = "% of households with at least one Insecticide Treated Mosquito Net (ITMN)",
+       y = "Life expectancy at birth", 
+       title = "An analysis of the relationship between life expectancy and the use of ITMNs in 2015") +
+  guides(color = "none", size = "none") +
+  theme_classic() +
+  theme(text = element_text(family = "serif", size = 12))
+
+ggplotly(scatter_plot)
+
+
+```
+
+## A Snapshot Of Africa
+
+<img src="africa.png" alt="Africa Image" style="float: left; width: 290px; height: 270px; margin-right: 20px;" />
+<p style="margin-left: 200px;"> A map of Africa is provided to the left to help you visualize where the following countries in this report are located:<br>
+
+- Mali<br>
+- Niger<br>
+- Guinea-Bissau<br>
+- Uganda<br>
+- United Republic of Tanzania.</p>
+These countries have some of the **highest** adoption rates of **ITMNs** in this study.
+
+
+```{r}
+#| fig-cap: "In **Mali**, where **life expectancy stands at 59 years**, the adoption of ITMNs remains a critical focus to mitigate malaria-related mortality. Similarly, **in Niger**, with a **life expectancy of 62 years**, prioritizing the widespread use of ITMNs could significantly impact health outcomes. **Tanzania**, boasting a **life expectancy of 66 years**, underscores the importance of sustained efforts in ITMN adoption to enhance public health. In **Uganda**, with a **life expectancy of 63 years**, accelerating the adoption of ITMNs could lead to substantial gains in reducing malaria incidence. **Guinea-Bissau**, with a **life expectancy of 60 years**, emphasizes the urgent need for comprehensive ITMN initiatives to improve longevity and well-being."
+
+chart_join <- full_join(unicef_indicator_2, unicef_metadata, by = c("country", "time_period" = "year"))
+
+
+filtered_data <- chart_join %>%
+  filter(time_period == 2021,
+         country %in% c("Guinea-Bissau", "Niger", "Mali", "Tanzania, United Republic of", "Uganda")) %>%
+  group_by(country, time_period, .group = TRUE) %>%
+  summarise(m_lifeExp = mean(`Life expectancy at birth, total (years)`, na.rm = TRUE), .groups = "drop")
+
+
+p <- ggplot(filtered_data) +
+  aes(x = country, y = m_lifeExp, fill = country) +
+  geom_col() +
+  guides(fill = "none") +
+  labs(x = "Countries", 
+       y = "Average Life Expectancy", 
+       title = "Affected countries and their life expectancy in 2021") +
+  theme_classic() +
+  theme(text = element_text(family = "serif", size = 12), axis.text.x = element_text(angle = 0, hjust = 1))
+
+ggplotly(p)
+```
+
+## Conclusion
+In conclusion, while the adoption of **insecticide-treated mosquito nets (ITMNs)** has shown promising strides in mitigating the spread of **malaria**, the unexpected dip in **life expectancy** across certain regions raises intriguing questions. *Efforts aimed at promoting* ***ITMN*** *usage must be coupled with a comprehensive approach that addresses other determinants of health, including access to healthcare, sanitation, nutrition, and socio-economic factors*. By directing attention towards these multifaceted aspects, we can strive towards a holistic improvement in public health outcomes and ultimately pave the way for a **healthier future for all**.
+
+
+
+
+
+
